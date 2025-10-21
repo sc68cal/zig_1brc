@@ -3,7 +3,7 @@ const std = @import("std");
 // Contains a single measurement
 const temperatureReading = struct {
     location: []const u8,
-    temperature: f16,
+    temperature: f64,
 };
 
 // Used with StringHashMap to track data for a location.
@@ -11,8 +11,8 @@ const temperatureReading = struct {
 // This is used to calculate the cumulative average sum
 // without storing each measurement
 const temperatureEntry = struct {
-    temperatureAvg: f16,
-    count: u32,
+    temperatureAvg: f64,
+    count: u64,
 };
 
 pub fn parse(allocator: std.mem.Allocator, filepath: [:0]const u8) !std.StringHashMap(*temperatureEntry) {
@@ -36,7 +36,7 @@ pub fn parse(allocator: std.mem.Allocator, filepath: [:0]const u8) !std.StringHa
         if (entries.contains(entryItem.location)) {
             var entry = entries.getPtr(entryItem.location).?.*;
             entry.count += 1;
-            const converted_count = @as(f16, @floatFromInt(entry.count));
+            const converted_count = @as(f64, @floatFromInt(entry.count));
             // new_average = (old_average * (n-1) + new_value) / n
             const new_temp = (entry.temperatureAvg * (converted_count - 1) + entryItem.temperature) / converted_count;
             entry.temperatureAvg = new_temp;
