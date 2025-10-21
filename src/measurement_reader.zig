@@ -1,13 +1,23 @@
 const std = @import("std");
 
+// Contains a single measurement
 const temperatureReading = struct {
     location: []const u8,
     temperature: f16,
 };
 
-pub fn parse(allocator: std.mem.Allocator, filepath: [:0]const u8) !void {
-    var entries = try std.ArrayList(temperatureReading).initCapacity(allocator, 100);
-    defer entries.deinit(allocator);
+// Used with StringHashMap to track data for a location.
+// Location name is the key in the Hashmap and this is the value.
+// This is used to calculate the cumulative average sum
+// without storing each measurement
+const temperatureEntry = struct {
+    temperatureAvg: f16,
+    count: u32,
+};
+
+pub fn parse(allocator: std.mem.Allocator, filepath: [:0]const u8) !std.StringHashMap(*temperatureEntry) {
+    // Create a StringHashMap that stores the temperatures
+    var entries = std.StringHashMap(*temperatureEntry).init(allocator);
 
     var buf: [8196]u8 = undefined;
     // assume a single line is less than 256 chars
@@ -18,33 +28,43 @@ pub fn parse(allocator: std.mem.Allocator, filepath: [:0]const u8) !void {
     var w = std.Io.Writer.fixed(&write_buf);
 
     while (r.interface.streamDelimiterEnding(&w, '\n')) |count| {
+        if (count == 0) {
+            // Hit the end of the file which is a single newline and no content
+            break;
+        }
         const entryItem = try splitData(w.buffer[0..count]);
-        try entries.append(
-            allocator,
-            entryItem,
-        );
-        std.debug.print(
-            "Entry count is {d}\n",
-            .{entries.items.len},
-        );
-        std.debug.print(
-            "location: {s} temp: {d}\n",
-            .{ entryItem.location, entryItem.temperature },
-        );
+        if (entries.contains(entryItem.location)) {
+            var entry = entries.getPtr(entryItem.location).?.*;
+            entry.count += 1;
+            const converted_count = @as(f16, @floatFromInt(entry.count));
+            // new_average = (old_average * (n-1) + new_value) / n
+            const new_temp = (entry.temperatureAvg * (converted_count - 1) + entryItem.temperature) / converted_count;
+            entry.temperatureAvg = new_temp;
+        } else {
+            const key = try allocator.dupe(u8, entryItem.location);
+            const val = try allocator.create(temperatureEntry);
+            val.* = .{
+                .count = 1,
+                .temperatureAvg = entryItem.temperature,
+            };
+            try entries.put(key, val);
+        }
         _ = w.consumeAll();
         _ = try r.interface.discardDelimiterInclusive('\n');
     } else |err| {
         std.debug.print("{any}", .{err});
         @panic("failed to read");
     }
+
+    return entries;
 }
 
-fn splitData(temperatureEntry: []const u8) !temperatureReading {
+fn splitData(temperatureRecord: []const u8) !temperatureReading {
     // split the string based on the ; and convert the temperatore to f16
     var location: []const u8 = undefined;
     var temp: f16 = undefined;
-    const sep = std.mem.indexOf(u8, temperatureEntry, ";").?;
-    location = temperatureEntry[0..sep];
-    temp = try std.fmt.parseFloat(f16, temperatureEntry[sep + 1 .. temperatureEntry.len]);
+    const sep = std.mem.indexOf(u8, temperatureRecord, ";").?;
+    location = temperatureRecord[0..sep];
+    temp = try std.fmt.parseFloat(f16, temperatureRecord[sep + 1 .. temperatureRecord.len]);
     return temperatureReading{ .location = location, .temperature = temp };
 }

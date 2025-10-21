@@ -27,10 +27,20 @@ pub fn main() !void {
             filepath = arg;
         }
         i += 1;
-        std.debug.print("arg is {s} \n", .{arg});
     }
 
     std.debug.print("Opening file path {s} \n", .{filepath});
 
-    try measurement_reader.parse(allocator, filepath);
+    var map = try measurement_reader.parse(allocator, filepath);
+    defer _ = map.deinit();
+
+    std.debug.print("Total number of items {d}\n", .{map.count()});
+
+    var it = map.iterator();
+    while (it.next()) |entry| {
+        std.debug.print(
+            "{s}: {d}\n",
+            .{ entry.key_ptr.*, entry.value_ptr.*.temperatureAvg },
+        );
+    }
 }
