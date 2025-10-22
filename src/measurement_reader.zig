@@ -40,8 +40,12 @@ pub fn parse(allocator: std.mem.Allocator, filepath: [:0]const u8) !std.StringHa
             var entry = entries.getPtr(entryItem.location).?.*;
             entry.count += 1;
             const converted_count = @as(f64, @floatFromInt(entry.count));
+            // constant average algorithm
             // new_average = (old_average * (n-1) + new_value) / n
-            const new_temp = (entry.temperatureAvg * (converted_count - 1) + entryItem.temperature) / converted_count;
+            const new_temp =
+                (entry.temperatureAvg *
+                    (converted_count - 1) +
+                    entryItem.temperature) / converted_count;
             entry.temperatureAvg = new_temp;
         } else {
             const key = try allocator.dupe(u8, entryItem.location);
