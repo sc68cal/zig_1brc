@@ -12,7 +12,8 @@ const temperatureReading = struct {
 // without storing each measurement
 const temperatureEntry = struct {
     temperatureAvg: f64,
-    count: u64,
+    // Worst case assume 1 billion row file of just one city
+    count: u30,
 };
 
 pub fn parse(allocator: std.mem.Allocator, filepath: [:0]const u8) !std.StringHashMap(*temperatureEntry) {
