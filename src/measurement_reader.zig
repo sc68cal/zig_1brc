@@ -16,7 +16,10 @@ const temperatureEntry = struct {
     count: u30,
 };
 
-pub fn parse(allocator: std.mem.Allocator, filepath: [:0]const u8) !std.StringHashMap(*temperatureEntry) {
+pub fn parse(
+    allocator: std.mem.Allocator,
+    filepath: [:0]const u8,
+) !std.StringHashMap(*temperatureEntry) {
     // Create a StringHashMap that stores the temperatures
     var entries = std.StringHashMap(*temperatureEntry).init(allocator);
 
