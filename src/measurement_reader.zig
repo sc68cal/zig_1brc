@@ -29,7 +29,10 @@ pub fn parse(
     // assume a single line is less than 256 chars
     var write_buf: [256]u8 = undefined;
 
-    var r = std.fs.File.readerStreaming(try std.fs.cwd().openFile(filepath, .{}), &buf);
+    var r = std.fs.File.readerStreaming(
+        try std.fs.cwd().openFile(filepath, .{}),
+        &buf,
+    );
 
     var w = std.Io.Writer.fixed(&write_buf);
 
@@ -59,7 +62,9 @@ pub fn parse(
             };
             try entries.put(key, val);
         }
+        // Reset the buffer writer back to the start
         _ = w.consumeAll();
+        // Advance the reader
         _ = try r.interface.discardDelimiterInclusive('\n');
     } else |err| {
         std.debug.print("{any}", .{err});
