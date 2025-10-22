@@ -20,6 +20,8 @@ pub fn parse(allocator: std.mem.Allocator, filepath: [:0]const u8) !std.StringHa
     // Create a StringHashMap that stores the temperatures
     var entries = std.StringHashMap(*temperatureEntry).init(allocator);
 
+    // Use a fixed 8k chunk - might align with storage size
+    // TODO: check if this is a good value that fits the OS expectations
     var buf: [8196]u8 = undefined;
     // assume a single line is less than 256 chars
     var write_buf: [256]u8 = undefined;
