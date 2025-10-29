@@ -55,6 +55,9 @@ pub fn parse(
                     entryItem.temperature) / converted_count;
             entry.*.temperatureAvg = new_temp;
         } else {
+            // Copy the location name into a dynamically allocated u8
+            // since entryItem is stack-allocated and StringHashMap
+            // requires you to manage keys yourself
             const key = try allocator.dupe(u8, entryItem.location);
             try entries.put(key, .{
                 .count = 1,
