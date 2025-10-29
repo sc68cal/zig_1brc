@@ -19,9 +19,9 @@ const temperatureEntry = struct {
 pub fn parse(
     allocator: std.mem.Allocator,
     filepath: [:0]const u8,
-) !std.StringHashMap(*temperatureEntry) {
+) !std.StringHashMap(temperatureEntry) {
     // Create a StringHashMap that stores the temperatures
-    var entries = std.StringHashMap(*temperatureEntry).init(allocator);
+    var entries = std.StringHashMap(temperatureEntry).init(allocator);
 
     // Use a fixed 8k chunk - might align with storage size
     // TODO: check if this is a good value that fits the OS expectations
@@ -43,8 +43,8 @@ pub fn parse(
         }
         const entryItem = try splitData(w.buffer[0..count]);
         if (entries.contains(entryItem.location)) {
-            var entry = entries.getPtr(entryItem.location).?.*;
-            entry.count += 1;
+            var entry = entries.getPtr(entryItem.location).?;
+            entry.*.count += 1;
             const converted_count = @as(f64, @floatFromInt(entry.count));
             // constant average algorithm
             // new_average = (old_average * (n-1) + new_value) / n
@@ -52,15 +52,13 @@ pub fn parse(
                 (entry.temperatureAvg *
                     (converted_count - 1) +
                     entryItem.temperature) / converted_count;
-            entry.temperatureAvg = new_temp;
+            entry.*.temperatureAvg = new_temp;
         } else {
             const key = try allocator.dupe(u8, entryItem.location);
-            const val = try allocator.create(temperatureEntry);
-            val.* = .{
+            try entries.put(key, .{
                 .count = 1,
                 .temperatureAvg = entryItem.temperature,
-            };
-            try entries.put(key, val);
+            });
         }
         // Reset the buffer writer back to the start
         _ = w.consumeAll();
