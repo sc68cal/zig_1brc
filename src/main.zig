@@ -11,7 +11,7 @@ pub fn main() !void {
 
     var args = try std.process.argsWithAllocator(allocator);
     defer args.deinit();
-    if (args.inner.count > 2) {
+    if (args.inner.count > 3) {
         @panic("Invalid number of arguments");
     }
 
@@ -21,11 +21,18 @@ pub fn main() !void {
     // iterator
     var i: u2 = 0;
     var filepath: [:0]const u8 = undefined;
+    var threads: u8 = 1;
     while (args.next()) |arg| {
-        // first arg is always the program name itself
-        // second arg is what we want to pick up
-        if (i == 1) {
-            filepath = arg;
+        switch (i) {
+            // first arg is always the program name itself
+            // second arg is what we want to pick up
+            1 => {
+                filepath = arg;
+            },
+            2 => {
+                threads = try std.fmt.parseUnsigned(u8, arg, 10);
+            },
+            else => {},
         }
         i += 1;
     }
