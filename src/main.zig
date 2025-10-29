@@ -2,6 +2,8 @@ const std = @import("std");
 const measurement_reader = @import("measurement_reader.zig");
 
 pub fn main() !void {
+    // Use the arena allocator because this is a CLI program and we
+    // can just throw everything out at the end of the run
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
 
@@ -9,7 +11,6 @@ pub fn main() !void {
 
     var args = try std.process.argsWithAllocator(allocator);
     defer args.deinit();
-
     if (args.inner.count > 2) {
         @panic("Invalid number of arguments");
     }
