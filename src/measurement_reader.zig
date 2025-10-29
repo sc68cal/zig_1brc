@@ -59,10 +59,13 @@ pub fn parse(
             // since entryItem is stack-allocated and StringHashMap
             // requires you to manage keys yourself
             const key = try allocator.dupe(u8, entryItem.location);
-            try entries.put(key, .{
-                .count = 1,
-                .temperatureAvg = entryItem.temperature,
-            });
+            try entries.put(
+                key,
+                .{
+                    .count = 1,
+                    .temperatureAvg = entryItem.temperature,
+                },
+            );
         }
         // Mark the number of bytes read as consumed
         _ = w.consume(count);
@@ -82,6 +85,12 @@ fn splitData(temperatureRecord: []const u8) !temperatureReading {
     var temp: f16 = undefined;
     const sep = std.mem.indexOf(u8, temperatureRecord, ";").?;
     location = temperatureRecord[0..sep];
-    temp = try std.fmt.parseFloat(f16, temperatureRecord[sep + 1 .. temperatureRecord.len]);
-    return temperatureReading{ .location = location, .temperature = temp };
+    temp = try std.fmt.parseFloat(
+        f16,
+        temperatureRecord[sep + 1 .. temperatureRecord.len],
+    );
+    return temperatureReading{
+        .location = location,
+        .temperature = temp,
+    };
 }
