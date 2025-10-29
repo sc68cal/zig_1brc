@@ -25,16 +25,17 @@ pub fn parse(
 
     // Use a fixed 8k chunk - might align with storage size
     // TODO: check if this is a good value that fits the OS expectations
-    var buf: [8196]u8 = undefined;
-    // assume a single line is less than 256 chars
-    var write_buf: [256]u8 = undefined;
+    var reader_buffer: [8196]u8 = undefined;
+    // Use a dynamically allocated buffer to store lines from the file
+    // so that we don't have to worry about a line being too long
+    var writer_buffer = try std.Io.Writer.Allocating.initCapacity(allocator, 255);
+    defer writer_buffer.deinit();
 
     var r = std.fs.File.readerStreaming(
         try std.fs.cwd().openFile(filepath, .{}),
-        &buf,
+        &reader_buffer,
     );
-
-    var w = std.Io.Writer.fixed(&write_buf);
+    var w = writer_buffer.writer;
 
     while (r.interface.streamDelimiterEnding(&w, '\n')) |count| {
         if (count == 0) {
@@ -60,8 +61,8 @@ pub fn parse(
                 .temperatureAvg = entryItem.temperature,
             });
         }
-        // Reset the buffer writer back to the start
-        _ = w.consumeAll();
+        // Mark the number of bytes read as consumed
+        _ = w.consume(count);
         // Advance the reader
         _ = try r.interface.discardDelimiterInclusive('\n');
     } else |err| {
