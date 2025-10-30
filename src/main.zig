@@ -21,7 +21,8 @@ pub fn main() !void {
     // iterator
     var i: u2 = 0;
     var filepath: [:0]const u8 = undefined;
-    var threads: u8 = 1;
+    // Assume a max of 256 threads, and start with a default of 2
+    var threads: u8 = 2;
     while (args.next()) |arg| {
         switch (i) {
             // first arg is always the program name itself
@@ -31,6 +32,9 @@ pub fn main() !void {
             },
             2 => {
                 threads = try std.fmt.parseUnsigned(u8, arg, 10);
+                if (threads < 1) {
+                    @panic("Invalid input for threads");
+                }
             },
             else => {},
         }
@@ -38,17 +42,42 @@ pub fn main() !void {
     }
 
     std.debug.print("Opening file path {s} \n", .{filepath});
+    const contents = try std.fs.Dir.readFileAlloc(
+        std.fs.cwd(),
+        filepath,
+        allocator,
+        .unlimited,
+    );
+    std.debug.print("File is size {d}\n", .{contents.len});
 
-    var map = try measurement_reader.parse(allocator, filepath);
-    defer _ = map.deinit();
-
-    std.debug.print("Total number of items {d}\n", .{map.count()});
-
-    var it = map.iterator();
-    while (it.next()) |entry| {
+    var start: usize = 0;
+    var end: usize = 0;
+    var chunk_size: usize = contents.len / threads;
+    std.debug.print("Chunk size is {d}\n", .{chunk_size});
+    if (threads > 1) {
+        // find first newline, after chunk_size
+        end = std.mem.findPos(u8, contents, chunk_size, "\n").?;
+    } else {
+        // no chopping, process the whole file in one thread
+        chunk_size = contents.len;
+        end = contents.len;
+    }
+    var count: i8 = 0;
+    while (count < threads) {
+        // Send this chunk to a thread
         std.debug.print(
-            "{s}: {d}\n",
-            .{ entry.key_ptr.*, entry.value_ptr.*.temperatureAvg },
+            "Found newline for thread {d}, starting at {d} and ending at {d}\n",
+            .{ count + 1, start, end },
         );
+        // Set up for the next iteration
+        start = end + 1;
+        // Jump ahead in the file by chunk_size, unless there is
+        // not enough file left
+        if (end + chunk_size <= contents.len) {
+            end = std.mem.findPos(u8, contents, end + chunk_size, "\n").?;
+        } else {
+            end = contents.len;
+        }
+        count += 1;
     }
 }
