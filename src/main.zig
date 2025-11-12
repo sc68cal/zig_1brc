@@ -83,11 +83,14 @@ pub fn main() !void {
                 end = start + pos;
                 contents = try allocator.dupe(u8, rbuffer[0..pos]);
             }
+            // Increment count before print so we get 1 based index
+            // for pretty human readable format
             count += 1;
             std.debug.print(
                 "Thread {d}, starting at {d} and ending at {d} - {d} bytes\n",
                 .{ count, start, end, end - start },
             );
+            // Update new start position
             start = end + 1;
             // Print first line of the chunk
             std.debug.print("First measurement: {s}\n", .{
