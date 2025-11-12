@@ -6,6 +6,8 @@ pub fn main() !void {
     // can just throw everything out at the end of the run
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
+    var f: std.fs.File = undefined;
+    defer f.close();
 
     const allocator = arena.allocator();
 
@@ -42,43 +44,40 @@ pub fn main() !void {
     }
 
     std.debug.print("Opening file path {s} \n", .{filepath});
-    const cwd = std.fs.cwd();
-    const fstat = try cwd.statFile(filepath);
-    const contents = try cwd.readFileAlloc(
-        allocator,
-        filepath,
-        fstat.size,
-    );
-    std.debug.print("File is size {d}\n", .{contents.len});
+    const stats = try std.fs.cwd().statFile(filepath);
+    std.debug.print("File is size {d}\n", .{stats.size});
 
-    var start: usize = 0;
-    var end: usize = 0;
-    var chunk_size: usize = contents.len / threads;
-    std.debug.print("Chunk size is {d}\n", .{chunk_size});
+    var start: u64 = 0;
+    var end: u64 = 0;
+    var chunk_size: u64 = stats.size / threads;
     if (threads > 1) {
-        // find first newline, after chunk_size
-        end = std.mem.indexOfPos(u8, contents, chunk_size, "\n").?;
+        std.debug.print("Chunk size is {d}\n", .{chunk_size});
+        const rbuffer = try allocator.alloc(u8, chunk_size);
+        // open the file, seek to chunk size
+        f = try std.fs.cwd().openFile(filepath, .{});
+        var count: i8 = 0;
+
+        while (count < threads) {
+            // Set up for the next iteration
+            // Send this chunk to a thread
+            if (count == threads - 1) {
+                // last thread, give the remainder
+                end = stats.size;
+            } else {
+                _ = try f.seekTo(start);
+                _ = try f.read(rbuffer);
+                end = start + std.mem.lastIndexOf(u8, rbuffer, "\n").?;
+            }
+            std.debug.print(
+                "Thread {d}, starting at {d} and ending at {d}\n",
+                .{ count + 1, start, end },
+            );
+            count += 1;
+            start = end + 1;
+        }
     } else {
         // no chopping, process the whole file in one thread
-        chunk_size = contents.len;
-        end = contents.len;
-    }
-    var count: i8 = 0;
-    while (count < threads) {
-        // Send this chunk to a thread
-        std.debug.print(
-            "Found newline for thread {d}, starting at {d} and ending at {d}\n",
-            .{ count + 1, start, end },
-        );
-        // Set up for the next iteration
-        start = end + 1;
-        // Jump ahead in the file by chunk_size, unless there is
-        // not enough file left
-        if (end + chunk_size <= contents.len) {
-            end = std.mem.indexOfPos(u8, contents, end + chunk_size, "\n").?;
-        } else {
-            end = contents.len;
-        }
-        count += 1;
+        chunk_size = stats.size;
+        end = stats.size;
     }
 }
