@@ -42,11 +42,12 @@ pub fn main() !void {
     }
 
     std.debug.print("Opening file path {s} \n", .{filepath});
-    const contents = try std.fs.Dir.readFileAlloc(
-        std.fs.cwd(),
-        filepath,
+    const cwd = std.fs.cwd();
+    const fstat = try cwd.statFile(filepath);
+    const contents = try cwd.readFileAlloc(
         allocator,
-        .unlimited,
+        filepath,
+        fstat.size,
     );
     std.debug.print("File is size {d}\n", .{contents.len});
 
@@ -56,7 +57,7 @@ pub fn main() !void {
     std.debug.print("Chunk size is {d}\n", .{chunk_size});
     if (threads > 1) {
         // find first newline, after chunk_size
-        end = std.mem.findPos(u8, contents, chunk_size, "\n").?;
+        end = std.mem.indexOfPos(u8, contents, chunk_size, "\n").?;
     } else {
         // no chopping, process the whole file in one thread
         chunk_size = contents.len;
@@ -74,7 +75,7 @@ pub fn main() !void {
         // Jump ahead in the file by chunk_size, unless there is
         // not enough file left
         if (end + chunk_size <= contents.len) {
-            end = std.mem.findPos(u8, contents, end + chunk_size, "\n").?;
+            end = std.mem.indexOfPos(u8, contents, end + chunk_size, "\n").?;
         } else {
             end = contents.len;
         }
