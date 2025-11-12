@@ -13,7 +13,7 @@ pub fn main() !void {
 
     var args = try std.process.argsWithAllocator(allocator);
     defer args.deinit();
-    if (args.inner.count > 3) {
+    if (args.inner.count < 2) {
         @panic("Invalid number of arguments");
     }
 
