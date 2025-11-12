@@ -44,7 +44,7 @@ pub fn parse(
         }
         const entryItem = try splitData(w.buffer[0..count]);
         if (entries.contains(entryItem.location)) {
-            var entry = entries.getPtr(entryItem.location).?;
+            const entry = entries.getPtr(entryItem.location).?;
             entry.*.count += 1;
             const converted_count = @as(f64, @floatFromInt(entry.count));
             // constant average algorithm
