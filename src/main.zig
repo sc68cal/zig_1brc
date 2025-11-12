@@ -92,7 +92,8 @@ pub fn main() !void {
             );
             // Update new start position
             start = end + 1;
-            // Print first line of the chunk
+            // Print first line of the chunk to make sure we're working
+            // correctly
             std.debug.print("First measurement: {s}\n", .{
                 contents[0..std.mem.indexOf(u8, contents, "\n").?],
             });
