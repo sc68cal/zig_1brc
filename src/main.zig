@@ -7,7 +7,9 @@ pub fn main() !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
 
-    const allocator = arena.allocator();
+    // Wrap the arena with threadsafe so multiple threads can use
+    var ts_arena: std.heap.ThreadSafeAllocator = .{ .child_allocator = arena.allocator() };
+    const allocator = ts_arena.allocator();
 
     var args = try std.process.argsWithAllocator(allocator);
     defer args.deinit();
