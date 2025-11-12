@@ -46,38 +46,44 @@ pub fn main() !void {
     std.debug.print("Opening file path {s} \n", .{filepath});
     const stats = try std.fs.cwd().statFile(filepath);
     std.debug.print("File is size {d}\n", .{stats.size});
+    f = try std.fs.cwd().openFile(filepath, .{});
 
-    var start: u64 = 0;
-    var end: u64 = 0;
-    var chunk_size: u64 = stats.size / threads;
     if (threads > 1) {
+        var start: u64 = 0;
+        var end: u64 = 0;
+        // Divide the file into equal-ish sized chunks (integer division)
+        const chunk_size: u64 = stats.size / threads;
         std.debug.print("Chunk size is {d}\n", .{chunk_size});
+        // Allocate a chunk of memory to be used as a buffer.
+        // We take a chunk_size bite of the file, find the last newline
+        // in the buffer, then update the start and end positions based on the
+        // location of that newline, then take another bite of the file.
         const rbuffer = try allocator.alloc(u8, chunk_size);
-        // open the file, seek to chunk size
-        f = try std.fs.cwd().openFile(filepath, .{});
         var count: i8 = 0;
 
         while (count < threads) {
-            // Set up for the next iteration
-            // Send this chunk to a thread
             if (count == threads - 1) {
-                // last thread, give the remainder
+                // last thread, set the end to be the remainder of the file
                 end = stats.size;
             } else {
-                _ = try f.seekTo(start);
+                // micro optimization: Don't seek at start of file
+                if (start > 0) {
+                    _ = try f.seekTo(start);
+                }
+                // Read a chunk of the file into the buffer and look
+                // for a newline
                 _ = try f.read(rbuffer);
                 end = start + std.mem.lastIndexOf(u8, rbuffer, "\n").?;
             }
+            count += 1;
             std.debug.print(
                 "Thread {d}, starting at {d} and ending at {d}\n",
-                .{ count + 1, start, end },
+                .{ count, start, end },
             );
-            count += 1;
+            // Update start position for the next iteration
             start = end + 1;
         }
     } else {
         // no chopping, process the whole file in one thread
-        chunk_size = stats.size;
-        end = stats.size;
     }
 }
