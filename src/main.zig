@@ -6,8 +6,6 @@ pub fn main() !void {
     // can just throw everything out at the end of the run
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
-    var f: std.fs.File = undefined;
-    defer f.close();
 
     const allocator = arena.allocator();
 
@@ -46,7 +44,8 @@ pub fn main() !void {
     std.debug.print("Opening file path {s} \n", .{filepath});
     const stats = try std.fs.cwd().statFile(filepath);
     std.debug.print("File is size {d}\n", .{stats.size});
-    f = try std.fs.cwd().openFile(filepath, .{});
+    var f = try std.fs.cwd().openFile(filepath, .{});
+    defer f.close();
 
     if (threads > 1) {
         var start: u64 = 0;
