@@ -81,6 +81,10 @@ pub fn main() !void {
                 "Thread {d}, starting at {d} and ending at {d}\n",
                 .{ count, start, end },
             );
+            // TODO: Copy rbuffer contents based on start and end
+            // and pass to the thread since we already spent the
+            // time reading from disk
+
             // Update start position for the next iteration
             start = end + 1;
         }
