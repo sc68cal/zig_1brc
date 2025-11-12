@@ -67,7 +67,7 @@ pub fn main() !void {
                 // last thread, set the end to be the remainder of the file
                 end = stats.size;
             } else {
-                // micro optimization: Don't seek at start of file
+                // micro optimization: Don't call seek for first iteration
                 if (start > 0) {
                     _ = try f.seekTo(start);
                 }
@@ -78,8 +78,8 @@ pub fn main() !void {
             }
             count += 1;
             std.debug.print(
-                "Thread {d}, starting at {d} and ending at {d}\n",
-                .{ count, start, end },
+                "Thread {d}, starting at {d} and ending at {d} - {d} bytes\n",
+                .{ count, start, end, end - start },
             );
             // TODO: Copy rbuffer contents based on start and end
             // and pass to the thread since we already spent the
