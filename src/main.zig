@@ -63,30 +63,36 @@ pub fn main() !void {
         var count: i8 = 0;
 
         while (count < threads) {
+            var pos: usize = undefined;
+            var contents: []u8 = undefined;
+            // micro optimization: Don't call seek for first iteration
+            if (start > 0) {
+                _ = try f.seekTo(start);
+            }
+            // Read a chunk of the file into the buffer
+            _ = try f.read(rbuffer);
             if (count == threads - 1) {
                 // last thread, set the end to be the remainder of the file
                 end = stats.size;
+                // Save an allocation since this is the last iteration.
+                // No copy required.
+                contents = rbuffer;
             } else {
-                // micro optimization: Don't call seek for first iteration
-                if (start > 0) {
-                    _ = try f.seekTo(start);
-                }
-                // Read a chunk of the file into the buffer and look
-                // for a newline
-                _ = try f.read(rbuffer);
-                end = start + std.mem.lastIndexOf(u8, rbuffer, "\n").?;
+                // look for a newline
+                pos = std.mem.lastIndexOf(u8, rbuffer, "\n").?;
+                end = start + pos;
+                contents = try allocator.dupe(u8, rbuffer[0..pos]);
             }
             count += 1;
             std.debug.print(
                 "Thread {d}, starting at {d} and ending at {d} - {d} bytes\n",
                 .{ count, start, end, end - start },
             );
-            // TODO: Copy rbuffer contents based on start and end
-            // and pass to the thread since we already spent the
-            // time reading from disk
-
-            // Update start position for the next iteration
             start = end + 1;
+            // Print first line of the chunk
+            std.debug.print("First measurement: {s}\n", .{
+                contents[0..std.mem.indexOf(u8, contents, "\n").?],
+            });
         }
     } else {
         // no chopping, process the whole file in one thread
