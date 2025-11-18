@@ -59,29 +59,33 @@ pub fn main() !void {
         // We take a chunk_size bite of the file, find the last newline
         // in the buffer, then update the start and end positions based on the
         // location of that newline, then take another bite of the file.
-        const rbuffer = try allocator.alloc(u8, chunk_size);
+        var rbuffers = try std.ArrayList(*const []u8).initCapacity(
+            allocator,
+            threads,
+        );
         var count: i8 = 0;
 
         while (count < threads) {
             var pos: usize = undefined;
-            var contents: []u8 = undefined;
             // micro optimization: Don't call seek for first iteration
             if (start > 0) {
                 _ = try f.seekTo(start);
             }
-            // Read a chunk of the file into the buffer
-            _ = try f.read(rbuffer);
             if (count == threads - 1) {
                 // last thread, set the end to be the remainder of the file
                 end = stats.size;
-                // Save an allocation since this is the last iteration.
-                // No copy required.
-                contents = rbuffer;
+                // Read the rest of the file
+                const final = try f.readToEndAlloc(allocator, end - start);
+                try rbuffers.append(allocator, &final);
             } else {
+                var rbuffer = try allocator.alloc(u8, chunk_size);
+                // Read a chunk of the file into the buffer
+                _ = try f.read(rbuffer);
                 // look for a newline
                 pos = std.mem.lastIndexOf(u8, rbuffer, "\n").?;
                 end = start + pos;
-                contents = try allocator.dupe(u8, rbuffer[0..pos]);
+                // Create a slice that ends at the last newline
+                try rbuffers.append(allocator, &rbuffer[0..pos]);
             }
             // Increment count before print so we get 1 based index
             // for pretty human readable format
@@ -94,11 +98,10 @@ pub fn main() !void {
             start = end + 1;
             // Print first line of the chunk to make sure we're working
             // correctly
+            var item = rbuffers.items[@as(usize, @intCast(count - 1))].*;
             std.debug.print(
                 "First measurement: {s}\n",
-                .{
-                    contents[0..std.mem.indexOf(u8, contents, "\n").?],
-                },
+                .{item[0..std.mem.indexOf(u8, item, "\n").?]},
             );
         }
     } else {
