@@ -18,26 +18,20 @@ const temperatureEntry = struct {
 
 pub fn parse(
     allocator: std.mem.Allocator,
-    filepath: [:0]const u8,
+    measurements: []const u8,
 ) !std.StringHashMap(temperatureEntry) {
     // Create a StringHashMap that stores the temperatures
     var entries = std.StringHashMap(temperatureEntry).init(allocator);
 
     // Use a fixed 8k chunk - might align with storage size
     // TODO: check if this is a good value that fits the OS expectations
-    var reader_buffer: [8196]u8 = undefined;
-    // Use a dynamically allocated buffer to store lines from the file
-    // so that we don't have to worry about a line being too long
     var writer_buffer = try std.Io.Writer.Allocating.initCapacity(allocator, 255);
     defer writer_buffer.deinit();
 
-    var r = std.fs.File.readerStreaming(
-        try std.fs.cwd().openFile(filepath, .{}),
-        &reader_buffer,
-    );
+    var r = std.Io.Reader.fixed(measurements);
     var w = writer_buffer.writer;
 
-    while (r.interface.streamDelimiterEnding(&w, '\n')) |count| {
+    while (r.streamDelimiterEnding(&w, '\n')) |count| {
         if (count == 0) {
             // Hit the end of the file which is a single newline and no content
             break;
@@ -70,7 +64,7 @@ pub fn parse(
         // Mark the number of bytes read as consumed
         _ = w.consume(count);
         // Advance the reader
-        _ = try r.interface.discardDelimiterInclusive('\n');
+        _ = try r.discardDelimiterInclusive('\n');
     } else |err| {
         std.debug.print("{any}", .{err});
         @panic("failed to read");
