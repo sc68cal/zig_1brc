@@ -85,7 +85,7 @@ pub fn main() !void {
                 pos = std.mem.lastIndexOf(u8, rbuffer, "\n").?;
                 end = start + pos;
                 // Create a slice that ends at the last newline
-                try rbuffers.append(allocator, &rbuffer[0..pos]);
+                try rbuffers.append(allocator, &rbuffer[0 .. pos + 1]);
             }
             // Increment count before print so we get 1 based index
             // for pretty human readable format
@@ -104,6 +104,7 @@ pub fn main() !void {
                 .{item[0..std.mem.indexOf(u8, item, "\n").?]},
             );
         }
+        _ = try measurement_reader.parse(allocator, rbuffers.items[0].*);
     } else {
         // no chopping, process the whole file in one thread
     }
