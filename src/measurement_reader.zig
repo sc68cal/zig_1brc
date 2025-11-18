@@ -23,8 +23,7 @@ pub fn parse(
     // Create a StringHashMap that stores the temperatures
     var entries = std.StringHashMap(temperatureEntry).init(allocator);
 
-    // Use a fixed 8k chunk - might align with storage size
-    // TODO: check if this is a good value that fits the OS expectations
+    // Assume that no individual temperature reading is longer than 255 chars
     var writer_buffer = try std.Io.Writer.Allocating.initCapacity(allocator, 255);
     defer writer_buffer.deinit();
 
