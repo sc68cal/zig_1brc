@@ -87,6 +87,7 @@ pub fn main() !void {
                 // Create a slice that ends at the last newline
                 try rbuffers.append(allocator, &rbuffer[0 .. pos + 1]);
             }
+            var item = rbuffers.items[@as(usize, @intCast(count))].*;
             // Increment count before print so we get 1 based index
             // for pretty human readable format
             count += 1;
@@ -98,7 +99,6 @@ pub fn main() !void {
             start = end + 1;
             // Print first line of the chunk to make sure we're working
             // correctly
-            var item = rbuffers.items[@as(usize, @intCast(count - 1))].*;
             std.debug.print(
                 "First measurement: {s}\n",
                 .{item[0..std.mem.indexOf(u8, item, "\n").?]},
