@@ -103,8 +103,9 @@ pub fn main() !void {
                 "First measurement: {s}\n",
                 .{item[0..std.mem.indexOf(u8, item, "\n").?]},
             );
+            const readings = try measurement_reader.parse(allocator, rbuffers.items[0].*);
+            std.debug.print("Readings count: {d}\n", .{readings.count()});
         }
-        _ = try measurement_reader.parse(allocator, rbuffers.items[0].*);
     } else {
         // no chopping, process the whole file in one thread
     }
