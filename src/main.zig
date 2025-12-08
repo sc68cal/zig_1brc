@@ -50,5 +50,9 @@ pub fn main() !void {
         std.debug.print("Readings count: {d}\n", .{readings.count()});
     } else {
         // no chopping, process the whole file in one thread
+        const stats = try std.fs.cwd().statFile(filepath);
+        const data = try std.fs.cwd().readFileAlloc(allocator, filepath, stats.size);
+        const readings = try measurement_reader.parse(allocator, data);
+        std.debug.print("Readings count: {d}\n", .{readings.count()});
     }
 }
