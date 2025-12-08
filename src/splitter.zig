@@ -1,6 +1,10 @@
 const std = @import("std");
 
-pub fn split(allocator: std.mem.Allocator, filepath: [:0]const u8, chunk_count: u64) !std.ArrayList(*const []u8) {
+pub fn split(
+    allocator: std.mem.Allocator,
+    filepath: [:0]const u8,
+    chunk_count: u64,
+) !std.ArrayList([]u8) {
     std.debug.print("Opening file path {s} \n", .{filepath});
     const stats = try std.fs.cwd().statFile(filepath);
     std.debug.print("File is size {d}\n", .{stats.size});
@@ -16,7 +20,7 @@ pub fn split(allocator: std.mem.Allocator, filepath: [:0]const u8, chunk_count: 
     // We take a chunk_size bite of the file, find the last newline
     // in the buffer, then update the start and end positions based on the
     // location of that newline, then take another bite of the file.
-    var rbuffers = try std.ArrayList(*const []u8).initCapacity(
+    var rbuffers = try std.ArrayList([]u8).initCapacity(
         allocator,
         chunk_count,
     );
@@ -33,7 +37,7 @@ pub fn split(allocator: std.mem.Allocator, filepath: [:0]const u8, chunk_count: 
             end = stats.size;
             // Read the rest of the file
             const final = try f.readToEndAlloc(allocator, end - start);
-            try rbuffers.append(allocator, &final);
+            try rbuffers.append(allocator, final);
         } else {
             var rbuffer = try allocator.alloc(u8, chunk_size);
             // Read a chunk of the file into the buffer
@@ -42,9 +46,9 @@ pub fn split(allocator: std.mem.Allocator, filepath: [:0]const u8, chunk_count: 
             pos = std.mem.lastIndexOf(u8, rbuffer, "\n").?;
             end = start + pos;
             // Create a slice that ends at the last newline
-            try rbuffers.append(allocator, &rbuffer[0 .. pos + 1]);
+            try rbuffers.append(allocator, rbuffer[0 .. pos + 1]);
         }
-        var item = rbuffers.items[@as(usize, @intCast(count))].*;
+        var item = rbuffers.items[@as(usize, @intCast(count))];
         // Increment count before print so we get 1 based index
         // for pretty human readable format
         count += 1;

@@ -46,7 +46,8 @@ pub fn main() !void {
 
     if (threads > 1) {
         const chunks = try splitter.split(allocator, filepath, threads);
-        const readings = try measurement_reader.parse(allocator, chunks.items[0].*);
+        std.debug.print("chunks count: {d}\n", .{chunks.items.len});
+        const readings = try measurement_reader.parse(allocator, chunks.items[0]);
         std.debug.print("Readings count: {d}\n", .{readings.count()});
     } else {
         // no chopping, process the whole file in one thread
