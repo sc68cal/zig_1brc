@@ -47,8 +47,10 @@ pub fn main() !void {
     if (threads > 1) {
         const chunks = try splitter.split(allocator, filepath, threads);
         std.debug.print("chunks count: {d}\n", .{chunks.items.len});
-        const readings = try measurement_reader.parse(allocator, chunks.items[0]);
-        std.debug.print("Readings count: {d}\n", .{readings.count()});
+        for (chunks.items) |item| {
+            const readings = try measurement_reader.parse(allocator, item);
+            std.debug.print("Readings count: {d}\n", .{readings.count()});
+        }
     } else {
         // no chopping, process the whole file in one thread
         const stats = try std.fs.cwd().statFile(filepath);
