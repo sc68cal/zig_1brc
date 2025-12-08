@@ -3,7 +3,7 @@ const std = @import("std");
 pub fn split(
     allocator: std.mem.Allocator,
     filepath: [:0]const u8,
-    chunk_count: u64,
+    chunk_count: u16,
 ) !std.ArrayList([]u8) {
     std.debug.print("Opening file path {s} \n", .{filepath});
     const stats = try std.fs.cwd().statFile(filepath);
@@ -24,7 +24,7 @@ pub fn split(
         allocator,
         chunk_count,
     );
-    var count: u64 = 0;
+    var count: u16 = 0;
 
     while (count < chunk_count) {
         var pos: usize = undefined;
