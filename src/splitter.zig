@@ -24,7 +24,7 @@ pub fn split(
         allocator,
         chunk_count,
     );
-    var count: i8 = 0;
+    var count: u64 = 0;
 
     while (count < chunk_count) {
         var pos: usize = undefined;
