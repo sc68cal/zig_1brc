@@ -1,4 +1,4 @@
-### 1 Billion Row Challenge in Zig
+# 1 Billion Row Challenge in Zig
 
 This is an implementation of the [1BRC][1brc] in Zig, in order to practice
 programming in Zig.
@@ -6,6 +6,8 @@ programming in Zig.
 [1brc]: https://github.com/gunnarmorling/1brc
 
 It uses Zig version `0.15.2`
+
+## Design Notes
 
 ### File chunking strategy
 
@@ -17,7 +19,6 @@ to find the last newline and then any remaining data will be put into the next
 buffer. I then advance the file position after the newline, and then read
 `chunk_size` within the file and repeat the process. The only special case is
 the last processing thread, where I read to the end of the file.
-
 
 ### Memory allocation strategy
 
@@ -31,15 +32,24 @@ threads will complete around the same time. We also have to `wait()` on all the
 threads to complete before we print, and then exit so there's not much reason to
 optimize that part.
 
-### Results
 
-Using tempfs and reading sequentially
+### Multithreading considerations
+
+The main issue with multithreading was implementing a wrapper around the
+standard StringHashMap so that multiple threads could mutate the hash map. For
+now, a simple mutex is used, but one optimization that could be investigated is
+allowing concurrent reads and only using a lock for writing to the map.
+
+## Results
+
+Using tempfs and reading sequentially. This design uses very little memory but 
+is slow.
 
 ```
 1584.67s user 5.15s system 99% cpu 26:31.83 total
 ```
 
-Reading from spinning disk and using multiple threads
+Reading from spinning disk and using multiple threads.
 
 ```
 469.31s user 2956.70s system 931% cpu 6:07.63 total
