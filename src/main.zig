@@ -73,12 +73,15 @@ pub fn main() !void {
             pool.spawnWg(&wg, WorkerTask.run, .{ allocator, item, &entries });
         }
         wg.wait();
-        std.debug.print("Readings count: {d}\n", .{entries.count()});
     } else {
         // no chopping, process the whole file in one thread
         const stats = try std.fs.cwd().statFile(filepath);
         const data = try std.fs.cwd().readFileAlloc(allocator, filepath, stats.size);
         try measurement_reader.parse(allocator, data, &entries);
-        std.debug.print("Readings count: {d}\n", .{entries.count()});
+    }
+    std.debug.print("Readings count: {d}\n", .{entries.count()});
+    var iterator = entries.map.iterator();
+    while (iterator.next()) |entry| {
+        std.debug.print("{s}: {d}\n", .{ entry.key_ptr.*, entry.value_ptr.*.temperatureAvg });
     }
 }
