@@ -43,19 +43,42 @@ pub fn main() !void {
         }
         i += 1;
     }
+    var entries = measurement_reader.ThreadSafeHashMap.init(allocator);
 
     if (threads > 1) {
+        var pool: std.Thread.Pool = undefined;
+        try pool.init(.{
+            .allocator = allocator,
+            .n_jobs = threads,
+        });
+        // Initialize a WaitGroup to synchronize the completion of tasks.
+        var wg: std.Thread.WaitGroup = .{};
+
+        // Define the function that will be executed by the worker threads.
+        // This function takes a `usize` argument (the task ID in this example).
+        const WorkerTask = struct {
+            fn run(
+                alloc: std.mem.Allocator,
+                data: []const u8,
+                map: *measurement_reader.ThreadSafeHashMap,
+            ) void {
+                _ = measurement_reader.parse(alloc, data, map) catch {
+                    @panic("WorkerTask failed with error");
+                };
+            }
+        };
         const chunks = try splitter.split(allocator, filepath, threads);
         std.debug.print("chunks count: {d}\n", .{chunks.items.len});
         for (chunks.items) |item| {
-            const readings = try measurement_reader.parse(allocator, item);
-            std.debug.print("Readings count: {d}\n", .{readings.count()});
+            pool.spawnWg(&wg, WorkerTask.run, .{ allocator, item, &entries });
         }
+        wg.wait();
+        std.debug.print("Readings count: {d}\n", .{entries.count()});
     } else {
         // no chopping, process the whole file in one thread
         const stats = try std.fs.cwd().statFile(filepath);
         const data = try std.fs.cwd().readFileAlloc(allocator, filepath, stats.size);
-        const readings = try measurement_reader.parse(allocator, data);
-        std.debug.print("Readings count: {d}\n", .{readings.count()});
+        try measurement_reader.parse(allocator, data, &entries);
+        std.debug.print("Readings count: {d}\n", .{entries.count()});
     }
 }

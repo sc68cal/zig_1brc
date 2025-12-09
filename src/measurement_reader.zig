@@ -6,6 +6,56 @@ const temperatureReading = struct {
     temperature: f64,
 };
 
+pub const ThreadSafeHashMap = struct {
+    mutex: std.Thread.Mutex,
+    map: std.StringHashMap(temperatureEntry),
+
+    pub fn init(allocator: std.mem.Allocator) ThreadSafeHashMap {
+        return .{
+            .mutex = std.Thread.Mutex{},
+            .map = std.StringHashMap(temperatureEntry).init(allocator),
+        };
+    }
+
+    pub fn deinit(self: *ThreadSafeHashMap) void {
+        self.map.deinit();
+    }
+
+    pub fn put(self: *ThreadSafeHashMap, key: []const u8, value: temperatureEntry) !void {
+        self.mutex.lock();
+        defer self.mutex.unlock();
+        try self.map.put(key, value);
+    }
+
+    pub fn get(self: *ThreadSafeHashMap, key: []const u8) ?[]const u8 {
+        self.mutex.lock();
+        defer self.mutex.unlock();
+        return self.map.get(key);
+    }
+
+    pub fn remove(self: *ThreadSafeHashMap, key: []const u8) ?[]const u8 {
+        self.mutex.lock();
+        defer self.mutex.unlock();
+        return self.map.remove(key);
+    }
+
+    pub fn contains(self: *ThreadSafeHashMap, key: []const u8) bool {
+        self.mutex.lock();
+        defer self.mutex.unlock();
+        return self.map.contains(key);
+    }
+    pub fn getPtr(self: *ThreadSafeHashMap, key: []const u8) ?*temperatureEntry {
+        self.mutex.lock();
+        defer self.mutex.unlock();
+        return self.map.getPtr(key);
+    }
+    pub fn count(self: *ThreadSafeHashMap) u32 {
+        self.mutex.lock();
+        defer self.mutex.unlock();
+        return self.map.count();
+    }
+};
+
 // Used with StringHashMap to track data for a location.
 // Location name is the key in the Hashmap and this is the value.
 // This is used to calculate the cumulative average sum
@@ -19,10 +69,8 @@ const temperatureEntry = struct {
 pub fn parse(
     allocator: std.mem.Allocator,
     measurements: []const u8,
-) !std.StringHashMap(temperatureEntry) {
-    // Create a StringHashMap that stores the temperatures
-    var entries = std.StringHashMap(temperatureEntry).init(allocator);
-
+    entries: *ThreadSafeHashMap,
+) !void {
     // Assume that no individual temperature reading is longer than 255 chars
     var writer_buffer = try std.Io.Writer.Allocating.initCapacity(allocator, 255);
     defer writer_buffer.deinit();
@@ -68,8 +116,6 @@ pub fn parse(
         std.debug.print("{any}", .{err});
         @panic("failed to read");
     }
-
-    return entries;
 }
 
 fn splitData(temperatureRecord: []const u8) !temperatureReading {
