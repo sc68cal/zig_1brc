@@ -55,7 +55,8 @@ pub fn main() !void {
         var wg: std.Thread.WaitGroup = .{};
 
         // Define the function that will be executed by the worker threads.
-        // This function takes a `usize` argument (the task ID in this example).
+        // run() takes in the threadsafe allocator, a file chunk, and
+        // a pointer to the ThreadSafeHashMap that parse requires
         const WorkerTask = struct {
             fn run(
                 alloc: std.mem.Allocator,
