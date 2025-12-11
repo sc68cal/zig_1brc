@@ -3,7 +3,7 @@ const std = @import("std");
 pub fn split(
     allocator: std.mem.Allocator,
     filepath: [:0]const u8,
-    chunk_count: u16,
+    chunk_count: usize,
 ) !std.ArrayList([]u8) {
     std.debug.print("Opening file path {s} \n", .{filepath});
     const stats = try std.fs.cwd().statFile(filepath);
@@ -14,7 +14,7 @@ pub fn split(
     var end: u64 = 0;
 
     // Divide the file into equal-ish sized chunks (integer division)
-    const chunk_size: u64 = stats.size / chunk_count;
+    const chunk_size = stats.size / chunk_count;
     std.debug.print("Chunk size is {d}\n", .{chunk_size});
     // Allocate a chunk of memory to be used as a buffer.
     // We take a chunk_size bite of the file, find the last newline
@@ -24,7 +24,7 @@ pub fn split(
         allocator,
         chunk_count,
     );
-    var count: u16 = 0;
+    var count: usize = 0;
 
     while (count < chunk_count) {
         var pos: usize = undefined;

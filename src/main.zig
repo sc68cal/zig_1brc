@@ -24,8 +24,7 @@ pub fn main() !void {
     // iterator
     var i: u2 = 0;
     var filepath: [:0]const u8 = undefined;
-    // Assume a max of 256 threads, and start with a default of 2
-    var threads: u8 = 2;
+    var threads = try std.Thread.getCpuCount();
     while (args.next()) |arg| {
         switch (i) {
             // first arg is always the program name itself
@@ -34,6 +33,8 @@ pub fn main() !void {
                 filepath = arg;
             },
             2 => {
+                // User wants to override number of threads, instead of
+                // using getCpuCount()
                 threads = try std.fmt.parseUnsigned(u8, arg, 10);
                 if (threads < 1) {
                     @panic("Invalid input for threads");
