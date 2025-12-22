@@ -63,7 +63,13 @@ Reading from SSDs with multiple threads and warm cache
 489.75s user 2334.85s system 988% cpu 4:45.73 total
 ```
 
-IO performance:
+IO performance (not cached):
+
+SSD models:
+* OCZ-VERTEX4
+* Samsung SSD 840 PRO
+
+Configured as an LVM volume group. Both models provide ~500MB/s sequential read.
 
 ```
 time dd if=measurements.txt of=/dev/null bs=4096
