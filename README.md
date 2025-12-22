@@ -38,7 +38,8 @@ optimize that part.
 The main issue with multithreading was implementing a wrapper around the
 standard StringHashMap so that multiple threads could mutate the hash map. For
 now, a simple mutex is used, but one optimization that could be investigated is
-allowing concurrent reads and only using a lock for writing to the map.
+[allowing concurrent reads and only using a lock for writing to the
+map][buckets].
 
 ## Results
 
@@ -80,3 +81,5 @@ time dd if=measurements.txt of=/dev/null bs=4096
 13795354642 bytes (14 GB, 13 GiB) copied, 8.63829 s, 1.6 GB/s
 dd if=measurements.txt of=/dev/null bs=4096  0.59s user 4.68s system 60% cpu 8.641 total
 ```
+
+[buckets]: https://www.openmymind.net/Zigs-HashMap-Part-3/
