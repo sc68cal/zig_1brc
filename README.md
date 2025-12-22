@@ -62,3 +62,13 @@ Reading from SSDs with multiple threads and warm cache
 ```
 489.75s user 2334.85s system 988% cpu 4:45.73 total
 ```
+
+IO performance:
+
+```
+time dd if=measurements.txt of=/dev/null bs=4096
+3368006+1 records in
+3368006+1 records out
+13795354642 bytes (14 GB, 13 GiB) copied, 8.63829 s, 1.6 GB/s
+dd if=measurements.txt of=/dev/null bs=4096  0.59s user 4.68s system 60% cpu 8.641 total
+```
