@@ -42,6 +42,8 @@ allowing concurrent reads and only using a lock for writing to the map.
 
 ## Results
 
+Running locally with an AMD Ryzen 5 3600 6-Core Processor
+
 Using tempfs and reading sequentially. This design uses very little memory but 
 is slow.
 
@@ -53,4 +55,10 @@ Reading from spinning disk and using multiple threads.
 
 ```
 469.31s user 2956.70s system 931% cpu 6:07.63 total
+```
+
+Reading from SSDs with multiple threads and warm cache
+
+```
+489.75s user 2334.85s system 988% cpu 4:45.73 total
 ```
